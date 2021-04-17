@@ -40,7 +40,8 @@ def create_app(test_config=None):
         }
       })
     except:
-      abort(422)
+      abort(422
+      )
 
   @app.route('/questions', methods=['GET'])
   def get_questions():
@@ -77,20 +78,6 @@ def create_app(test_config=None):
       else:
         abort(422)
 
-
-  '''
-  @TODO: 
-  Create an endpoint to handle GET requests for questions, 
-  including pagination (every 10 questions). 
-  This endpoint should return a list of questions, 
-  number of total questions, current category, categories. 
-
-  TEST: At this point, when you start the application
-  you should see questions and categories generated,
-  ten questions per page and pagination at the bottom of the screen for three pages.
-  Clicking on the page numbers should update the questions. 
-  '''
-
   '''
   @TODO: 
   Create an endpoint to DELETE question using a question ID. 
@@ -121,15 +108,34 @@ def create_app(test_config=None):
   Try using the word "title" to start. 
   '''
 
-  '''
-  @TODO: 
-  Create a GET endpoint to get questions based on category. 
+  @app.route('/categories/<int:category_id>/questions', methods=['GET'])
+  def get_questions_by_category(category_id):
+    ''' Retrieve questions based on category. '''
+    try:
+      page = request.args.get('page', 1, type=int)
 
-  TEST: In the "List" tab / main screen, clicking on one of the 
-  categories in the left column will cause only questions of that 
-  category to be shown. 
-  '''
+      questions = Questions.query.order_by(Question.id) \
+        .filter(Questions.category == category_id) \
+        .paginate(page=page, per_page=QUESTIONS_PER_PAGE)
 
+      questions_formatted = [
+        question.format() for question in questions.items
+      ]
+
+      if len(questions_formatted) == 0:
+        abort(404)
+      else:
+        return jsonify({
+          'success': True,
+          'questions': questions_formatted,
+          'total_questions': questions.total,
+          'current_category': category_id
+        })
+    except Exception as e:
+      if '404' in str(e):
+        abort(404)
+      else:
+        abort(422)
 
   '''
   @TODO: 
