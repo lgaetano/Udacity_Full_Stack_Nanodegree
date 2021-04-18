@@ -22,23 +22,22 @@ def create_app(test_config=None):
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization,true')
     response.headers.add('Access-Control-Allow-Methods', 'GET, PUT, POST, PATCH, DELETE, OPTIONS')
     return response
-  '''
-  @TODO: 
-  Create an endpoint to handle GET requests 
-  for all available categories.
-  '''
 
   @app.route('/categories', methods=['GET'])
   def get_categories():
     ''' Retrieve dictionary of categories'''
+
     try:
+      # Retrieve all categories
       categories = Category.query.order_by(Category.id).all()
+
       return jsonify({
         'success': True,
         'categories': {
           category.id: category.type for category in categories
         }
       })
+
     except:
       abort(422
       )
@@ -46,9 +45,12 @@ def create_app(test_config=None):
   @app.route('/questions', methods=['GET'])
   def get_questions():
     ''' Retrieve questions. Paginate results. '''
+
     try:
+      # Get page
       page = request.args.get('page', 1, type=int)
       
+      # Query, paginate and format questions
       questions = Question.query.order_by(Question.id) \
         .paginate(page=page, per_page=QUESTIONS_PER_PAGE)
       
@@ -56,6 +58,7 @@ def create_app(test_config=None):
         question.format() for question in questions.items
         ]
 
+      # Query and format categories
       categories = Category.query.order_by(Category.id).all()
       
       categories_formatted = {
@@ -81,13 +84,16 @@ def create_app(test_config=None):
   @app.route('/questions/<int:question_id>', methods=['DELETE'])
   def delete_question(question_id):
     ''' Delete question using question_id. '''
+
     try:
+      # Query for question with id == question_id
       question = Question.query.filter(Question.id == question_id) \
         .one_or_none()
 
       if question is None:
         abort(404)
 
+      # Delete question from database
       question.delete()
 
       return jsonify({
@@ -104,6 +110,8 @@ def create_app(test_config=None):
   @app.route('/questions', methods=['POST'])
   def new_question():
     ''' Add a new question. '''
+
+    # Retrieve raw data
     body = reqeust.get_json()
     question = body.get('question', None)
     answer = body.get('answer', None)
@@ -111,6 +119,7 @@ def create_app(test_config=None):
     category = body.get('category', None)
 
     try:
+      # Create a question
       question = Question(
         question=question,
         answer=answer,
@@ -118,6 +127,7 @@ def create_app(test_config=None):
         category=category
       )
 
+      # Update the database
       question.insert()
 
       return jsonify({
@@ -128,44 +138,41 @@ def create_app(test_config=None):
     except Exception:
       abort(422)
 
-  '''@TODO: 
-  Create a POST endpoint to get questions based on a search term. 
-  It should return any questions for whom the search term 
-  is a substring of the question. 
-
-  TEST: Search by any phrase. The questions list will update to include 
-  only question that include that string within their question. 
-  Try using the word "title" to start. 
-  '''
   @app_route('/search', methods=['POST'])
   def search_question():
     ''' Search questions based on a term. '''
-  body = request.get_json()
-  search = body.get('searchTerm', None)
+  
+    # Retrieve raw data
+    body = request.get_json()
+    search = body.get('searchTerm', None)
 
-  try:
-    question = Question.query.order_by(Question.id) \
-      .filter(Question.question.ilike('%{}%'.format(search)))
+    try:
+      # Query for search term and format
+      question = Question.query.order_by(Question.id) \
+        .filter(Question.question.ilike('%{}%'.format(search)))
 
-    questions_formatted = [
-      question.format() for question in questions
-    ]
+      questions_formatted = [
+        question.format() for question in questions
+      ]
 
-    return jsonify({
-      'success': True,
-      'questions': questions_formatted,
-      'total_questions': len(questions.all()),
-      'current_category': None
-    })
-  except Exception:
-    abort(422)
+      return jsonify({
+        'success': True,
+        'questions': questions_formatted,
+        'total_questions': len(questions.all()),
+        'current_category': None
+      })
+    except Exception:
+      abort(422)
 
   @app.route('/categories/<int:category_id>/questions', methods=['GET'])
   def get_questions_by_category(category_id):
     ''' Retrieve questions based on category. '''
+
     try:
+      # Get page
       page = request.args.get('page', 1, type=int)
 
+      # Query questions with category_id and paginate
       questions = Questions.query.order_by(Question.id) \
         .filter(Questions.category == category_id) \
         .paginate(page=page, per_page=QUESTIONS_PER_PAGE)
@@ -189,17 +196,58 @@ def create_app(test_config=None):
       else:
         abort(422)
 
-  '''
-  @TODO: 
-  Create a POST endpoint to get questions to play the quiz. 
-  This endpoint should take category and previous question parameters 
-  and return a random questions within the given category, 
-  if provided, and that is not one of the previous questions. 
+  @app.route('/quizzes', methods=['POST'])
+  def play_quiz():
+    ''' Get questions to play the quiz. '''
 
-  TEST: In the "Play" tab, after a user selects "All" or a category,
-  one question at a time is displayed, the user is allowed to answer
-  and shown whether they were correct or not. 
-  '''
+    try:
+      # Retrieve raw data
+      questions = None
+      body = request.get_json()
+      quiz_category = body.get('quiz_category', None)
+      previous_qs = body.get('previous_questions', None)
+      category_id = quiz_category.get('id')
+
+      if category_id == '0':
+        # If no category specified, get all questions
+        questions = Question.query.all()
+      else:
+        # Else get questions by requested category
+        questions = Question.query \
+          .filter(Question.category == category_id) \
+          .all()
+
+      # Format list of questions
+      questions_formatted = [
+        question.format() for question in questions
+      ]
+      
+      # Get id for each question
+      current_qs = [
+        question.get('id') for question in questions_formatted
+      ]
+
+      # Create list of ids
+      ids = list(set(current_qs).difference(previous_qs))
+
+      if len(ids) == 0:
+        return jsonify({
+          'success': True,
+          'question': None
+        })
+      else:
+        # Choose a random question_id
+        random_id = random.choice(ids)
+        question = Question.query.get(random_id)
+
+        return jsonify({
+          'success': True,
+          'question': question.format()
+        })
+
+    except Exception:
+      abort(422)
+
 
   '''
   @TODO: 
