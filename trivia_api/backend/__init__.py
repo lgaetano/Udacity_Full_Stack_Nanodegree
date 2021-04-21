@@ -112,7 +112,7 @@ def create_app(test_config=None):
     ''' Add a new question. '''
 
     # Retrieve raw data
-    body = reqeust.get_json()
+    body = request.get_json()
     question = body.get('question', None)
     answer = body.get('answer', None)
     difficulty = body.get('difficulty', None)
@@ -248,12 +248,41 @@ def create_app(test_config=None):
     except Exception:
       abort(422)
 
+  @app.errorhandler(400)
+  def bad_request(error):
+    print(error)
+    return jsonify({
+      'success': False,
+      'error': 400,
+      'message': 'Bad request'
+    }), 400
 
-  '''
-  @TODO: 
-  Create error handlers for all expected errors 
-  including 404 and 422. 
-  '''
-  
+  @app.errorhandler(404)
+  def not_found(error):
+    print(error)
+    return jsonify({
+      'success': False,
+      'error': 404,
+      'message': 'Resource not found'
+    }), 404
+
+  @app.errorhandler(422)
+  def unprocessable(error):
+    print(error)
+    return jsonfiy({
+      'success': False, 
+      'error': 422,
+      'message': 'Unprocessable'
+    }), 422
+
+  @app.errorhandler(500)
+  def internal_server_error(error):
+    print(error)
+    return jsonify({
+      'success': False, 
+      'error': 500,
+      'message': 'Internal server error'
+    }), 500
+
   return app
     

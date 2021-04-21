@@ -54,32 +54,17 @@ Setting the `FLASK_APP` variable to `flaskr` directs flask to use the `flaskr` d
 
 ## Tasks
 
-One note before you delve into your tasks: for each endpoint you are expected to define the endpoint and response data. The frontend will be a plentiful resource because it is set up to expect certain endpoints and response data formats already. You should feel free to specify endpoints in your own way; if you do so, make sure to update the frontend or you will get some unexpected behavior. 
-
-1. Use Flask-CORS to enable cross-domain requests and set response headers. 
-2. Create an endpoint to handle GET requests for questions, including pagination (every 10 questions). This endpoint should return a list of questions, number of total questions, current category, categories. 
-3. Create an endpoint to handle GET requests for all available categories. 
-4. Create an endpoint to DELETE question using a question ID. 
-5. Create an endpoint to POST a new question, which will require the question and answer text, category, and difficulty score. 
-6. Create a POST endpoint to get questions based on category. 
-7. Create a POST endpoint to get questions based on a search term. It should return any questions for whom the search term is a substring of the question. 
-8. Create a POST endpoint to get questions to play the quiz. This endpoint should take category and previous question parameters and return a random questions within the given category, if provided, and that is not one of the previous questions. 
-9. Create error handlers for all expected errors including 400, 404, 422 and 500. 
-
-REVIEW_COMMENT
-```
-This README is missing documentation of your endpoints. Below is an example for your endpoint to get all categories. Please use it as a reference for creating your documentation and resubmit your code. 
-
-Endpoints
-GET '/categories'
-GET ...
-POST ...
-DELETE ...
+ENDPOINTS
 
 GET '/categories'
-- Fetches a dictionary of categories in which the keys are the ids and the value is the corresponding string of the category
+- Fetches:
+    - Dictionary of categories where keys are ids and values are corresponding string of the category
 - Request Arguments: None
-- Returns: An object with a single key, categories, that contains a object of id: category_string key:value pairs. 
+- Returns an object with keys:
+    - 'success': Success flag boolean
+    - 'categories': Contains a object of id: category_string and key:value pairs. 
+```
+
 {'1' : "Science",
 '2' : "Art",
 '3' : "Geography",
@@ -88,7 +73,111 @@ GET '/categories'
 '6' : "Sports"}
 
 ```
+GET '/questions'
+- Fetches: 
+    - Paginated (by 10) list of questions
+    - Dictionary of categories
+    - Total number of questions
+    - Current category
+- Request Arguments: 
+    - 'page': Current page
+- Returns an object with keys:
+    - 'success': Success flag boolean
+    - 'questions': Paginated (by 10) list of questions
+    - 'total_questions': Total number of questions
+    - 'categories': Dictionary of categories
+    - 'current_category': The current category
 
+DELETE '/questions/<int:question_id>' 
+- Deletes question by question_id
+- Request Arguments: 
+    - 'question_id': Question's id
+- Returns an object with keys:
+    - 'success': Success flag boolean
+    - 'deleted': Id of question deleted
+
+POST '/questions'
+- Create new question
+- Request Arguments: 
+    - 'question': Question
+    - 'answer': Answer to question
+    - 'difficulty': Question difficulty
+    - 'category': Question category 
+- Returns an object with keys:
+    - 'success': Success flag boolean
+    - 'created': Id of question created
+
+POST '/search'
+- Search for a question
+- Request Arguments: 
+    - 'search': Search term
+- Returns: Object with keys:
+    - 'success': Success flag boolean
+    - 'questions': List of questions
+    - 'total_questions': Total number of questions
+    - 'current_category': Current category
+
+GET '/categories/:category_id/questions'
+- Fetches:
+    - List of questions in a category
+- Request Arguments: 
+    - 'category_id': Category id
+- Returns an object with keys:
+    - 'success': Success flag boolean
+    - 'questions': Paginated (by 10) list of questions
+    - 'current_category': Current category
+
+POST '/quizzes'
+- Fetches:
+    - One question for game play
+- Request arguments:
+    - 'quiz_category': Quiz category
+    - 'previous_ids': Previous question ids
+- Returns an object with keys:
+    - 'success': Success flag boolean
+    - 'question': Question for game play
+
+ERRORS
+
+ERROR 400
+    - Returns:
+    ```
+    {
+      'success': False,
+      'error': 400,
+      'message': 'Bad request'
+    }
+    ```
+
+ERROR 404
+    - Returns:
+    ```
+    {
+      'success': False,
+      'error': 404,
+      'message': 'Resource not found'
+    }
+    ```
+
+ERROR 422
+    - Returns:
+    ```
+    {
+      'success': False, 
+      'error': 422,
+      'message': 'Unprocessable'
+    }
+    ```
+
+ERROR 500
+    - Returns:
+    ```
+    {
+      'success': False, 
+      'error': 500,
+      'message': 'Internal server error'
+    }
+    ```
 
 ## Testing
 To run the tests, run
