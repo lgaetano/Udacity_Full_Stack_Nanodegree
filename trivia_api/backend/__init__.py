@@ -14,7 +14,7 @@ def create_app(test_config=None):
   # Create and configure the app
   app = Flask(__name__)
   setup_db(app)
-  CORS(app, resources={r"*/api/*": {origins: '*'}})
+  CORS(app, resources={r"/api/*": {"origins": "*"}})
 
   # CORS Headers
   @app.after_request
@@ -112,11 +112,11 @@ def create_app(test_config=None):
     ''' Add a new question. '''
 
     # Retrieve raw data
-    body = request.get_json()
-    question = body.get('question', None)
-    answer = body.get('answer', None)
-    difficulty = body.get('difficulty', None)
-    category = body.get('category', None)
+    data = request.get_json()
+    question = data.get('question', None)
+    answer = data.get('answer', None)
+    difficulty = data.get('difficulty', None)
+    category = data.get('category', None)
 
     try:
       # Create a question
@@ -138,18 +138,22 @@ def create_app(test_config=None):
     except Exception:
       abort(422)
 
-  @app_route('/search', methods=['POST'])
+  @app.route('/questions/search', methods=['POST'])
   def search_question():
     ''' Search questions based on a term. '''
   
     # Retrieve raw data
-    body = request.get_json()
-    search = body.get('searchTerm', None)
+    data = request.get_json()
+    search = data.get('searchTerm', None)
 
     try:
       # Query for search term and format
       question = Question.query.order_by(Question.id) \
-        .filter(Question.question.ilike('%{}%'.format(search)))
+        .filter(Question.question.ilike('%{}%'.format(search))) \
+          .paginate(page=page, per_page=QUESTIONS_PER_PAGE)
+
+      if not questions:
+        abort(422)
 
       questions_formatted = [
         question.format() for question in questions
@@ -173,8 +177,8 @@ def create_app(test_config=None):
       page = request.args.get('page', 1, type=int)
 
       # Query questions with category_id and paginate
-      questions = Questions.query.order_by(Question.id) \
-        .filter(Questions.category == category_id) \
+      questions = Question.query.order_by(Question.id) \
+        .filter(Question.category == category_id) \
         .paginate(page=page, per_page=QUESTIONS_PER_PAGE)
 
       questions_formatted = [
@@ -203,9 +207,9 @@ def create_app(test_config=None):
     try:
       # Retrieve raw data
       questions = None
-      body = request.get_json()
-      quiz_category = body.get('quiz_category', None)
-      previous_qs = body.get('previous_questions', None)
+      data = request.get_json()
+      quiz_category = data.get('quiz_category', None)
+      previous_qs = data.get('previous_questions', None)
       category_id = quiz_category.get('id')
 
       if category_id == '0':
@@ -215,6 +219,7 @@ def create_app(test_config=None):
         # Else get questions by requested category
         questions = Question.query \
           .filter(Question.category == category_id) \
+          .paginate(page=page, per_page=QUESTIONS_PER_PAGE) \
           .all()
 
       # Format list of questions
@@ -269,7 +274,7 @@ def create_app(test_config=None):
   @app.errorhandler(422)
   def unprocessable(error):
     print(error)
-    return jsonfiy({
+    return jsonify({
       'success': False, 
       'error': 422,
       'message': 'Unprocessable'
