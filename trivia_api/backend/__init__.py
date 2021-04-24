@@ -39,8 +39,7 @@ def create_app(test_config=None):
       })
 
     except:
-      abort(422
-      )
+      abort(422)
 
   @app.route('/questions', methods=['GET'])
   def get_questions():
@@ -62,7 +61,7 @@ def create_app(test_config=None):
       categories = Category.query.order_by(Category.id).all()
       
       categories_formatted = {
-        category.id: category.type for category in category
+        category.id: category.type for category in categories
       }
 
       if len(questions_formatted) == 0:
@@ -72,7 +71,7 @@ def create_app(test_config=None):
           'success': True,
           'questions': questions_formatted,
           'total_questions': questions.total,
-          'categories': category_formatted,
+          'categories': categories_formatted,
           'current_category': None 
         })
     except Exception as e:
@@ -144,27 +143,28 @@ def create_app(test_config=None):
   
     # Retrieve raw data
     data = request.get_json()
-    search = data.get('searchTerm', None)
+    search_term = data.get('searchTerm', None)
 
     try:
       # Query for search term and format
-      question = Question.query.order_by(Question.id) \
-        .filter(Question.question.ilike('%{}%'.format(search))) \
-          .paginate(page=page, per_page=QUESTIONS_PER_PAGE)
+      if search_term:
+        questions = Question.query.order_by(Question.id) \
+          .filter(Question.question.ilike('%{}%'.format(search_term)))
 
-      if not questions:
-        abort(422)
+        questions_formatted = [
+          question.format() for question in questions
+        ]
 
-      questions_formatted = [
-        question.format() for question in questions
-      ]
+        return jsonify({
+          'success': True,
+          'questions': questions_formatted,
+          'total_questions': len(questions),
+          'current_category': None,
+        })
 
-      return jsonify({
-        'success': True,
-        'questions': questions_formatted,
-        'total_questions': len(questions.all()),
-        'current_category': None
-      })
+      else:
+        abort(404)
+
     except Exception:
       abort(422)
 
