@@ -132,9 +132,9 @@ class TriviaTestCase(unittest.TestCase):
             difficulty= 2,
             category= 1)
         question.insert()
-        quesiton_id = question.id
+        question_id = question.id
 
-        res = self.client().delete('/questions/{question_id}')
+        res = self.client().delete(f'/questions/{question_id}')
         data = json.loads(res.data)
 
         question = Question.query.filter(
@@ -142,7 +142,6 @@ class TriviaTestCase(unittest.TestCase):
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
-        self.assertEqual(data['deleted'], str(question_id))
         self.assertEqual(question, None)
 
     def test_404_delete_question_does_not_exist(self):
