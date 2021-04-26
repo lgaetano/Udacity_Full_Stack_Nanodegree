@@ -84,27 +84,24 @@ def create_app(test_config=None):
   def delete_question(question_id):
     ''' Delete question using question_id. '''
 
+    # Query for question with id == question_id
+    question = Question.query.get(question_id)
+
+    if question is None:
+      abort(404)
+
     try:
-      # Query for question with id == question_id
-      question = Question.query.get(question_id) \
-        .one_or_none()
+      # Delete question from database
+      question.delete()
 
-      if question:
-        # Delete question from database
-        question.delete()
-
-        return jsonify({
-          'success': True,
-          'deleted': question_id
-        })
-      else:
-        abort(404)
-    
     except Exception as e:
-      if '404' in str(e):
-        abort(404)
-      else:
-        abort(422)
+      abort(422)
+
+    else:
+      return jsonify({
+        'success': True,
+        'deleted': question_id
+      })
 
   @app.route('/questions', methods=['POST'])
   def new_question():
@@ -135,6 +132,7 @@ def create_app(test_config=None):
       })
     
     except Exception:
+      print('Exception raised >> ' , e)
       abort(422)
 
   @app.route('/questions/search', methods=['POST'])
@@ -207,38 +205,37 @@ def create_app(test_config=None):
   def play_quiz():
     ''' Get questions to play the quiz. '''
 
-    try:
+    # try:
       # Retrieve raw data
-      data = request.get_json()
+    data = request.get_json()
 
-      if not ('quiz_category' in body and 'previous_questions' in body):
-        abort(422)
-      
-      quiz_category = data.get('quiz_category')
-      previous_questions = data.get('previous_questions')
-      category_id = quiz_category.get('id')
-
-      if category_id == '0':
-        # If no category specified, get all questions
-        questions = Question.query.filter(
-          Question.id.notin_((previous_questions))).all()
-      else:
-        # Else get questions by requested category
-        questions = Question.query \
-          .filter(Question.category == category_id) \
-          .filter(Question.id.notin_((previous_questions))) \
-          .paginate(page=page, per_page=QUESTIONS_PER_PAGE) \
-          .all()
-
-      new_question = questions[random.randrange(
-        0, len(questions))].format() if len(questions) > 0 else None
-
-      return jsonify({
-        'success': True
-      })
-
-    except Exception:
+    if not ('quiz_category' in data and 'previous_questions' in data):
       abort(422)
+    
+    quiz_category = data.get('quiz_category')
+    previous_questions = data.get('previous_questions')
+    category_id = quiz_category.get('id')
+
+    if category_id == '0':
+      # If no category specified, get all questions
+      questions = Question.query.filter(
+        Question.id.notin_((previous_questions))).all()
+    else:
+      # Else get questions by requested category
+      questions = Question.query \
+        .filter(Question.category == category_id) \
+        .filter(Question.id.notin_((previous_questions))) \
+        .all()
+
+    new_question = questions[random.randrange(
+      0, len(questions))].format() if len(questions) > 0 else None
+
+    return jsonify({
+      'success': True
+    })
+
+    # except Exception:
+    #   abort(422)
 
   @app.errorhandler(400)
   def bad_request(error):
