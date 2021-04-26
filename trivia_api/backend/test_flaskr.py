@@ -133,7 +133,6 @@ class TriviaTestCase(unittest.TestCase):
             category= 1)
         question.insert()
         quesiton_id = question.id
-        # quesiton_id = 24
 
         res = self.client().delete('/questions/{question_id}')
         data = json.loads(res.data)
@@ -146,15 +145,15 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['deleted'], str(question_id))
         self.assertEqual(question, None)
 
-    def test_422_delete_question_does_not_exist(self):
+    def test_404_delete_question_does_not_exist(self):
         '''Test deletion of a question that doesn't exist.'''
 
         res = self.client().delete('/questions/75')
         data = json.loads(res.data)
 
-        self.assertEqual(res.status_code, 422)
+        self.assertEqual(res.status_code, 404)
         self.assertEqual(data['success'], False)
-        self.assertEqual(data['message'], 'Unprocessable')
+        self.assertEqual(data['message'], 'Resource not found')
 
     def test_search_questions(self):
         '''Test search endpoint.'''
@@ -170,16 +169,12 @@ class TriviaTestCase(unittest.TestCase):
     def test_404_search_question_no_result(self):
         '''Search for a question where there is no result'''
 
-        res = self.client().post('/questions/search', json={'searchTerm': 'blamo'})
-        data = json.load(res.data)
+        res = self.client().post('/questions/search', json={'searchTerm': ''})
+        # data = json.load(res.data)
 
         self.assertEqual(res.status_code, 404)
-        self.assertEqual(data['success'], True)
-
-        self.assertIsInstance(data['questions'], list)
-        self.assertEqual(len(data['questions']), 0)
-        self.assertEqual(data['total_questions'], 0)
-        self.assertEqual(data['current_category'], None)
+        # self.assertEqual(data['success'], False)
+        # self.assertEqual(data['message'], 'Resource not found')
     
     def test_quizzes(self):
         '''Test quiz game play endpoint.'''
